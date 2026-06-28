@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Simulation</title>
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./main.js"></script>
+</head>
+
+<body>
+    <canvas id="fluid-canvas"></canvas>
+    
+    <button id="controls-show-button" class="controls-show-button" type="button">
+        Controls
+    </button>
+
+    <div id="controls-panel" class="controls-panel">
+        <div class="controls-header">
+            <div class="controls-title">
+                <strong>Fluid Controls</strong>
+                <span class="controls-subtitle">Click and drag to splat</span>
+            </div>
+            <button id="controls-hide-button" type="button">×</button>
+        </div>
+
+        <div class="controls-body">
+            <label>
+                <div>
+                    Display resolution
+                    <span>
+                        <select id="display-scale-select">
+                            <option value="1" selected>100%</option>
+                            <option value="2">50%</option>
+                            <option value="4">25%</option>
+                            <option value="8">12.5%</option>
+                            <option value="16">6.25%</option>
+                            <option value="32">3.125%</option>
+                            <option value="64">1.5625%</option>
+                        </select>
+                    </span>
+                </div>
+            </label>
+
+            <label>
+                <div>
+                    Simulation scale
+                    <span>
+                        <select id="sim-scale-select">
+                            <option value="4">1/4</option>
+                            <option value="8">1/8</option>
+                            <option value="16" selected>1/16</option>
+                            <option value="32">1/32</option>
+                            <option value="64">1/64</option>
+                        </select>
+                    </span>
+                </div>
+            </label>
+
+            <label>
+                <div>
+                    Contour
+                    <span>
+                        <input id="contour-checkbox" type="checkbox">
+                    </span>
+                </div>
+            </label>
+
+            <label>
+                <div>
+                    Sharpen
+                    <span>
+                        <input id="sharpen-checkbox" type="checkbox" checked>
+                    </span>
+                </div>
+            </label>
+
+            <label>
+                <div>
+                    Splat radius
+                    <span id="splat-radius-value">0.050</span>
+                </div>
+                <input id="splat-radius-slider" type="range" min="0.01" max="0.25" step="0.01" value="0.10">
+            </label>
+
+            <label>
+                <div>
+                    Vorticity
+                    <span id="vorticity-value">20.0</span>
+                </div>
+                <input id="vorticity-slider" type="range" min="0" max="50" step="0.1" value="20">
+            </label>
+
+            <label>
+                <div>
+                    Density diffusion
+                    <span id="density-diffusion-value">0.000</span>
+                </div>
+                <input id="density-diffusion-slider" type="range" min="0.1" max="5" step="0.01" value="0.5">
+            </label>
+
+            <label>
+                <div>
+                    Velocity diffusion
+                    <span id="velocity-diffusion-value">0.000</span>
+                </div>
+                <input id="velocity-diffusion-slider" type="range" min="0" max="5" step="0.01" value="0.5">
+            </label>
+
+            <button id="random-splats-button" type="button">Random Splats</button>
+        </div>
+    </div>
+</body>
+
+</html>

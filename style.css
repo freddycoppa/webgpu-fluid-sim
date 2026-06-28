@@ -1,0 +1,146 @@
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    font-family: system-ui, sans-serif;
+    font-size: 13px;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+}
+
+.controls-panel {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+
+    box-sizing: border-box;
+    width: 260px;
+    max-height: calc(100vh - 32px);
+    padding: 12px;
+
+    color: white;
+    background: rgba(20, 20, 20, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+
+    user-select: none;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.controls-header {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 12px;
+}
+
+.controls-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.controls-subtitle {
+    opacity: 0.65;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.controls-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    padding-right: 4px;
+}
+
+.controls-body label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.controls-body label>div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.controls-body span {
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+}
+
+.controls-body input[type="range"] {
+    width: 100%;
+}
+
+.controls-body button,
+.controls-header button,
+.controls-show-button {
+    cursor: pointer;
+
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+
+    padding: 6px 9px;
+    font: inherit;
+}
+
+.controls-body button:hover,
+.controls-header button:hover,
+.controls-show-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.controls-show-button {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9;
+}
+
+/* Nicer scrollbar */
+.controls-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.controls-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.controls-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+}
+
+.controls-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Keep this near the bottom so it beats display: flex above. */
+.controls-panel.hidden,
+.controls-show-button.hidden {
+    display: none;
+}
