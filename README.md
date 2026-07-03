@@ -4,6 +4,10 @@ An interactive Eulerian fluid simulation implemented in JavaScript with WebGPU c
 
 The goal of this project is to learn WebGPU by building a highly parallel physics simulation that runs directly in the browser.
 
+[Access the simulation here](https://freddycoppa.github.io/webgpu-fluid-sim/)
+
+![Fluid simulation screenshot](favicon.png)
+
 ## Features
 
 1. Separate density and velocity grid scales for balancing visual quality and simulation performance
