@@ -16,6 +16,7 @@ The goal of this project is to learn WebGPU by building a highly parallel physic
 ## Theory
 
 This simulation solves the incompressible inviscid Navier-Stokes equations (a.k.a. Euler equations) on a 2-dimensional fluid velocity field. For a velocity field $\vec u$, the Euler equations are as follows:
+
 $$
 \begin{gather}
 \frac{\partial \vec u}{\partial t} + \left(\vec u \cdot \nabla\right) \vec u = - \frac{1}{\rho} \nabla p + \vec f \\
@@ -99,9 +100,11 @@ The first step to vorticity confinement is computing the curl of the velocity fi
 Every cell corner has a `u` face on top, a `u` face on the bottom, a `v` face to its left, and a `v` face to its right (remember `u` faces are vertical faces representing horizontal velocity components, and `v` faces are horizontal faces representing vertical velocity components). Let's call these faces `u_top`, `u_bottom`, `v_left` & `v_right` respectively.
 
 The curl of the velocity field is mathematically defined as
+
 $$
 \nabla \times \left(u, v\right) =\frac{\partial v}{\partial x} - \frac{\partial u}{\partial y}
 $$
+
 This translates elegantly as
 ```
 curl(cell_corner) = v_right - v_left - u_top + u_bottom
@@ -113,16 +116,21 @@ Once we've computed the curl, we compute the gradient of its absolute value $\na
 ### Projection
 
 Advection (and splatting) usually introduce divergence into the velocity field. To remove divergence from the velocity field, we "project" it onto a divergence-free subspace of vector fields (similar to least squares, wherein we find the closest possible approximation to an unsolvable system). This comes from the Helmholtz Decomposition Theorem, which states that any vector field $F$ can be written as the sum of a solenoidal (divergence-free) field and an irrotational (curl-free) field:
+
 $$
 F = \nabla \times A + \nabla \phi
 $$
+
 Here, $A$ is a vector potential and $\phi$ is a scalar potential. $\nabla \times A$ is divergence-free because the divergence of curl is zero: $\nabla \cdot \nabla \times A = 0$, and $\nabla \phi$ is curl-free because the curl of gradient is zero: $\nabla \times \nabla \phi = 0$.
 
 #### Pressure Poisson Equation
 
 Let our advected velocity field *with* divergence be $u^*$. We want to solve for a pressure gradient $\nabla p$, such that after subtracting, the divergence of the remaining field is zero:
+
 $$\nabla \cdot (u^* - \nabla p) = 0$$
+
 If we wrangle this equation a little, we arrive at the pressure Poisson equation:
+
 $$
 \begin{align*}
     &\nabla \cdot (u^* - \nabla p) = 0 \\
@@ -132,17 +140,20 @@ $$
 $$
 
 In discrete terms, we want to solve for a pressure potential $p$ such that for all $i,j$:
+
 $$
 \begin{gather*}
 p_{i+1,j} + p_{i-1,j} + p_{i,j+1} + p_{i,j-1} - 4p_{i,j} = d_{i,j} \\
 \implies p_{i,j} = \frac14\left(p_{i+1,j} + p_{i-1,j} + p_{i,j+1} + p_{i,j-1} - d_{i,j}\right)
 \end{gather*}
 $$
+
 Where $d_{i,j}$ is the divergence of the velocity field at cell $(i,j)$. This rearrangement hints at an iterative method to solve for the whole pressure potential. Every iteration, the new pressure value is computed based on the surrounding old pressure values and the divergence.
 
 #### Divergence
 
 Since our discrete velocity field lies on the faces of the cells of the simulation, calculating divergence becomes trivial. For a cell whose left and right faces are $u_\text{left}$ and $u_\text{right}$, and whose top and bottom faces are $v_\text{top}$ and $v_\text{bottom}$, its divergence is computed as
+
 $$
 \text{div}(\text{cell}) = \nabla \cdot (u, v) = \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = u_\text{right} - u_\text{left} + v_\text{top} - v_\text{bottom}
 $$
