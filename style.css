@@ -144,3 +144,21 @@ canvas {
 .controls-show-button.hidden {
     display: none;
 }
+
+.controls-footer {
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: center;
+}
+
+.controls-footer a {
+    color: inherit;
+    opacity: 0.75;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.controls-footer a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
