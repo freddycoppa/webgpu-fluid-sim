@@ -32,18 +32,12 @@ export class GPUFluid {
             this.simWidth + 1, this.simHeight,
             this.simWidth, this.simHeight + 1
         );
-        this.curl = new PingPongTexture(
-            "curl",
-            device,
-            this.simWidth + 1, this.simHeight + 1
-        );
 
         this.pipelineLayout = device.createPipelineLayout({
             label: "pipeline layout",
             bindGroupLayouts: [
                 this.uniforms.getLayout(),
                 this.density .getLayout(),
-                this.curl    .getLayout(),
                 this.velocity.getLayout(),
             ]
         });
@@ -113,7 +107,6 @@ export class GPUFluid {
         this.advectDensityPipeline   = this.createComputePipeline("advectDensity"  );
         this.advectUPipeline         = this.createComputePipeline("advectU"        );
         this.advectVPipeline         = this.createComputePipeline("advectV"        );
-        this.computeCurlPipeline     = this.createComputePipeline("computeCurl"    );
         this.applyVorticityUPipeline = this.createComputePipeline("applyVorticityU");
         this.applyVorticityVPipeline = this.createComputePipeline("applyVorticityV");
         this.projectRedPipeline      = this.createComputePipeline("projectRed"     );
@@ -137,8 +130,7 @@ export class GPUFluid {
     setAllBindGroups(pass) {
         pass.setBindGroup(0, this.uniforms.getBindGroup());
         pass.setBindGroup(1, this.density .getBindGroup());
-        pass.setBindGroup(2, this.curl.getBindGroup());
-        pass.setBindGroup(3, this.velocity.getBindGroup());
+        pass.setBindGroup(2, this.velocity.getBindGroup());
     }
 
     splat(pass) {
@@ -166,7 +158,7 @@ export class GPUFluid {
             Math.ceil((this.simHeight + 1) / WORKGROUP_SIZE_Y),
         );
         this.velocity.swap();
-        pass.setBindGroup(3, this.velocity.getBindGroup());
+        pass.setBindGroup(2, this.velocity.getBindGroup());
     }
 
     advectDensity(pass) {
@@ -201,7 +193,7 @@ export class GPUFluid {
             Math.ceil((this.simHeight + 1) / WORKGROUP_SIZE_Y),
         );
         this.velocity.swap();
-        pass.setBindGroup(3, this.velocity.getBindGroup());
+        pass.setBindGroup(2, this.velocity.getBindGroup());
     }
 
     confineVorticity(pass) {
@@ -209,14 +201,6 @@ export class GPUFluid {
             WORKGROUP_SIZE_X,
             WORKGROUP_SIZE_Y,
         } = this.constants;
-
-        pass.setPipeline(this.computeCurlPipeline);
-        pass.dispatchWorkgroups(
-            Math.ceil(( this.simWidth + 1) / WORKGROUP_SIZE_X),
-            Math.ceil((this.simHeight + 1) / WORKGROUP_SIZE_Y),
-        );
-        this.curl.swap();
-        pass.setBindGroup(2, this.curl.getBindGroup());
 
         pass.setPipeline(this.applyVorticityUPipeline);
         pass.dispatchWorkgroups(
@@ -229,7 +213,7 @@ export class GPUFluid {
             Math.ceil((this.simHeight + 1) / WORKGROUP_SIZE_Y),
         );
         this.velocity.swap();
-        pass.setBindGroup(3, this.velocity.getBindGroup());
+        pass.setBindGroup(2, this.velocity.getBindGroup());
     }
 
     project(pass, n = 40) {
@@ -245,7 +229,7 @@ export class GPUFluid {
                 Math.ceil(this.simHeight / WORKGROUP_SIZE_Y),
             );
             this.velocity.swap();
-            pass.setBindGroup(3, this.velocity.getBindGroup());
+            pass.setBindGroup(2, this.velocity.getBindGroup());
 
             pass.setPipeline(this.projectBlackPipeline);
             pass.dispatchWorkgroups(
@@ -253,7 +237,7 @@ export class GPUFluid {
                 Math.ceil(this.simHeight / WORKGROUP_SIZE_Y),
             );
             this.velocity.swap();
-            pass.setBindGroup(3, this.velocity.getBindGroup());
+            pass.setBindGroup(2, this.velocity.getBindGroup());
         }
     }
 
@@ -295,12 +279,11 @@ export class GPUFluid {
         });
     }
 
-    randomSplat(radius) {
+    randomSplat(radius, speed) {
         const pos = [randrange(0.1, 0.9), randrange(0.1, 0.9)];
     
         const a = Math.random() * Math.PI * 2;
         const dir = [Math.cos(a), Math.sin(a)];
-        const speed = 3; // UV/sec
     
         this.addSplat(
             pos,
@@ -310,9 +293,9 @@ export class GPUFluid {
         );
     }
 
-    randomSplats(radius, n = 20) {
+    randomSplats(radius, speed, n = 20) {
         for (let i = 0; i < n; i++)
-            this.randomSplat(radius);
+            this.randomSplat(radius, speed);
     }
 
     step(context, params) {

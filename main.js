@@ -3,6 +3,8 @@ import { mouse } from './mouse.js';
 import { randomNiceColor, closeEnoughToZero, randrange } from './utils.js';
 import { setupControls } from './controls.js';
 
+let error = null;
+
 async function init() {
     const adapter = await navigator.gpu?.requestAdapter();
     const device = await adapter?.requestDevice();
@@ -23,7 +25,8 @@ async function init() {
     });
 
     device.addEventListener("uncapturederror", event => {
-        console.error("Uncaptured WebGPU error:", event.error);
+        error = event.error;
+        console.error("Uncaptured WebGPU error:", error);
     });
 
     syncCanvasSize(canvas);
@@ -59,15 +62,15 @@ async function main({ canvas, device, context, format, state }) {
 
     document.addEventListener("keydown", event => {
         if (event.code === "Space")
-            fluid.randomSplats(0.15);
+            fluid.randomSplats(0.15, 2);
     });
 
     document
         .querySelector("#random-splats-button")
-        .addEventListener("click", () => fluid.randomSplats(0.15))
+        .addEventListener("click", () => fluid.randomSplats(0.15, 2))
         ;
 
-    fluid.randomSplats(0.15);
+    fluid.randomSplats(0.15, 2);
 
     loop(context, fluid, state);
 }
@@ -94,7 +97,7 @@ async function loop(context, fluid, state) {
     let prev_time = null;
     let dt = 1 / 60;
 
-    for (;;) {
+    while (error == null) {
         const timestamp = await new Promise(requestAnimationFrame);
 
         if (prev_time != null) dt = (timestamp - prev_time) / 1000;
@@ -113,7 +116,7 @@ async function loop(context, fluid, state) {
             [ mouse.x, mouse.y ],
             state.splatRadius,
             randomNiceColor(),
-            mouseVelocity,
+            [ mouseVelocity[0] / 2, mouseVelocity[1] / 2 ],
         );
 
         fluid.step(context, {

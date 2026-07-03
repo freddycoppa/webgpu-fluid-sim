@@ -22,18 +22,10 @@ struct Params {
 @group(1) @binding(0) var density_in: texture_2d<f32>;
 @group(1) @binding(1) var density_out: texture_storage_2d<rgba16float, write>;
 
-/*
-@group(2) @binding(0) var pressure_in: texture_2d<f32>;
-@group(2) @binding(1) var pressure_out: texture_storage_2d<r32float, write>;
-*/
-
-@group(2) @binding(0) var curl_in: texture_2d<f32>;
-@group(2) @binding(1) var curl_out: texture_storage_2d<r32float, write>;
-
-@group(3) @binding(0) var u_in: texture_2d<f32>;
-@group(3) @binding(1) var u_out: texture_storage_2d<r32float, write>;
-@group(3) @binding(2) var v_in: texture_2d<f32>;
-@group(3) @binding(3) var v_out: texture_storage_2d<r32float, write>;
+@group(2) @binding(0) var u_in: texture_2d<f32>;
+@group(2) @binding(1) var u_out: texture_storage_2d<r32float, write>;
+@group(2) @binding(2) var v_in: texture_2d<f32>;
+@group(2) @binding(3) var v_out: texture_storage_2d<r32float, write>;
 
 fn d_dims() -> vec2f {
     return vec2f(textureDimensions(density_in));
@@ -136,7 +128,7 @@ fn rk4_backtrace(xy: vec2f, dt: f32) -> vec2f {
 }
 
 fn backtrace(xy: vec2f) -> vec2f {
-    return rk4_backtrace(xy, params.dt);
+    return rk1_backtrace(xy, params.dt);
 }
 
 @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
@@ -233,46 +225,18 @@ fn advectV(@builtin(global_invocation_id) id: vec3u) {
     texwrite(v_out, cell, sampleV(x_prev) / decay);
 }
 
-@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
-fn computeCurl(@builtin(global_invocation_id) id: vec3u) {
-    if (outOfBounds(id, curl_in)) { return; }
-
-    let cell = id.xy;
-
-    /*if (cell.x == 0) {
-        texwrite(curl_out, cell, texindex(v_in, cell));
-        return;
-    }
-
-    if (cell.x == SIM_WIDTH()) {
-        texwrite(curl_out, cell, -texindex(v_in, cell - vec2u(1, 0)));
-        return;
-    }
-
-    if (cell.y == 0) {
-        texwrite(curl_out, cell, -texindex(u_in, cell));
-        return;
-    }
-
-    if (cell.y == SIM_HEIGHT()) {
-        texwrite(curl_out, cell, texindex(u_in, cell - vec2u(0, 1)));
-        return;
-    }*/
-
+fn curl(idx: vec2u) -> f32 {
     if (
-           cell.x == 0
-        || cell.x == SIM_WIDTH()
-        || cell.y == 0
-        || cell.y == SIM_HEIGHT()
-    ) {
-        texwrite(curl_out, cell, 0);
-        return;
-    }
+           idx.x == 0
+        || idx.x == SIM_WIDTH()
+        || idx.y == 0
+        || idx.y == SIM_HEIGHT()
+    ) { return 0.0; }
 
-    let dvdx = texindex(v_in, cell) - texindex(v_in, cell - vec2u(1, 0));
-    let dudy = texindex(u_in, cell) - texindex(u_in, cell - vec2u(0, 1));
+    let dvdx = texindex(v_in, idx) - texindex(v_in, idx - vec2u(1, 0));
+    let dudy = texindex(u_in, idx) - texindex(u_in, idx - vec2u(0, 1));
 
-    texwrite(curl_out, cell, dvdx - dudy);
+    return dvdx - dudy;
 }
 
 @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
@@ -293,20 +257,24 @@ fn applyVorticityU(@builtin(global_invocation_id) id: vec3u) {
         return;
     }
 
-    let curl_t = texindex(curl_in, cell + vec2u(0, 1));
-    let curl_b = texindex(curl_in, cell + vec2u(0, 0));
-    let mag_l = 0.5 * (
-        abs(texindex(curl_in, cell - vec2u(1, 0))) +
-        abs(texindex(curl_in, cell - vec2u(1, 0) + vec2u(0, 1)))
+    let curl_t = curl(cell + vec2u(0, 1));
+    let curl_b = curl(cell + vec2u(0, 0));
+    
+    let curl_l = 0.25 * (
+        curl_t + curl_b +
+        curl(cell - vec2u(1, 0)) + 
+        curl(cell - vec2u(1, 0) + vec2u(0, 1))
     );
-    let mag_r = 0.5 * (
-        abs(texindex(curl_in, cell + vec2u(1, 0))) +
-        abs(texindex(curl_in, cell + vec2u(1, 0) + vec2u(0, 1)))
+
+    let curl_r = 0.25 * (
+        curl_t + curl_b +
+        curl(cell + vec2u(1, 0)) +
+        curl(cell + vec2u(1, 0) + vec2u(0, 1))
     );
     
-    let omega = 0.5 * (curl_b + curl_t);
+    let omega = 0.25 * (curl_b + curl_t + curl_r + curl_l);
     let gy = abs(curl_t) - abs(curl_b);
-    let gx = mag_r - mag_l;
+    let gx = abs(curl_r) - abs(curl_l);
 
     let grad = vec2f(gx, gy);
     let n = grad / max(length(grad), 1e-5);
@@ -333,21 +301,24 @@ fn applyVorticityV(@builtin(global_invocation_id) id: vec3u) {
         return;
     }
 
-    let curl_r = texindex(curl_in, cell + vec2u(1, 0));
-    let curl_l = texindex(curl_in, cell + vec2u(0, 0));
-    let mag_b = 0.5 * (
-        abs(texindex(curl_in, cell - vec2u(0, 1))) +
-        abs(texindex(curl_in, cell - vec2u(0, 1) + vec2u(1, 0)))
+    let curl_r = curl(cell + vec2u(1, 0));
+    let curl_l = curl(cell + vec2u(0, 0));
+
+    let curl_t = 0.25 * (
+        curl_l + curl_r +
+        curl(cell + vec2u(0, 1)) +
+        curl(cell + vec2u(0, 1) + vec2u(1, 0))
     );
 
-    let mag_t = 0.5 * (
-        abs(texindex(curl_in, cell + vec2u(0, 1))) +
-        abs(texindex(curl_in, cell + vec2u(0, 1) + vec2u(1, 0)))
+    let curl_b = 0.25 * (
+        curl_l + curl_r +
+        curl(cell - vec2u(0, 1)) +
+        curl(cell - vec2u(0, 1) + vec2u(1, 0))
     );
 
-    let omega = 0.5 * (curl_l + curl_r);
+    let omega = 0.25 * (curl_l + curl_r + curl_t + curl_b);
     let gx = abs(curl_r) - abs(curl_l);
-    let gy = mag_t - mag_b;
+    let gy = abs(curl_t) - abs(curl_b);
 
     let grad = vec2f(gx, gy);
     let n = grad / max(length(grad), 1e-5);
