@@ -1,6 +1,6 @@
 # GPU Fluid Simulation in JavaScript & WebGPU
 
-An interactive Eulerian fluid simulation implemented in JavaScript with [WebGPU](https://webgpu.org) compute shaders. The solver runs on the GPU and supports real-time density and velocity splats, adjustable grid resolutions, vorticity confinement, and configurable diffusion/decay.
+An interactive Eulerian fluid simulation implemented in JavaScript with WebGPU compute shaders. The solver runs on the GPU and supports real-time density and velocity splats, adjustable grid resolutions, vorticity confinement, and configurable diffusion/decay.
 
 The goal of this project is to learn [WebGPU](https://webgpu.org) by building a highly parallel physics simulation that runs directly in the browser.
 
