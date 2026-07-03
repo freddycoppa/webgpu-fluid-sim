@@ -174,7 +174,7 @@ Red-Black Gauss-Seidel marks cells with even parity as red, and cells with odd p
 
 ## Footnotes
 
-1. This simulation doesn't exactly perform full-blown pressure projection. Instead, it does a sort of iterative divergence relaxation, which removes divergence from the velocity field without explicitly solving for the pressure potential. I learned this method from [matthias-research](https://matthias-research.github.io/pages/tenMinutePhysics/17-fluidSim.pdf).
+1. This simulation doesn't exactly perform full-blown pressure projection. Instead, it does iterative divergence relaxation, which directly removes divergence from the velocity field without explicitly solving for the pressure potential. I learned this method from [matthias-research](https://matthias-research.github.io/pages/tenMinutePhysics/17-fluidSim.pdf).
 
 ## Other Topics
 
