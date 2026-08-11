@@ -63,14 +63,12 @@ fn texwrite(
 fn sample(tex: texture_2d<f32>, xy: vec2f) -> f32 {
     let size = vec2i(textureDimensions(tex));
 
-    // Convert from cell-center coordinates to index coordinates.
-    // So xy = vec2f(i + 0.5, j + 0.5) maps exactly to cell (i, j).
-    let p = xy - vec2f(0.5);
+    // cell center xy = vec2f(i + 0.5, j + 0.5) maps exactly to cell at index (i, j)
+    let p = xy - vec2f(0.5, 0.5);
 
     let i0 = vec2i(floor(p));
     let f = fract(p);
 
-    // Clamp to edge. Replace this with wrapping if your sim is toroidal.
     let a = clamp(i0, vec2i(0), size - vec2i(1));
     let b = clamp(i0 + vec2i(1, 0), vec2i(0), size - vec2i(1));
     let c = clamp(i0 + vec2i(0, 1), vec2i(0), size - vec2i(1));
@@ -492,30 +490,17 @@ fn densityAmount(rgb: vec3f) -> f32 {
 }
 
 fn sharpenRgbDensity(rgb: vec3f) -> vec3f {
-    // Pick a scalar "amount of smoke/color"
     let intensity = densityAmount(rgb);
-
-    // Remove faint haze and increase contrast
     let mask = smoothstep(0.04, 0.35, intensity);
-
-    // Preserve hue
     let hue = rgb / max(intensity, 1e-5);
-
     return hue * mask;
 }
 
 fn contourDensity(rgb: vec3f) -> vec3f {
     let d = densityAmount(rgb);
-
-    // Number of visible density layers
     let bands = 12.0;
-
-    // Quantized layer value
     let q = floor(d * bands) / bands;
-
-    // Preserve hue, but quantize brightness
     let hue = rgb / max(d, 1e-5);
-
     return hue * q;
 }
 
